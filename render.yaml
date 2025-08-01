@@ -1,0 +1,17 @@
+services:
+  - type: web
+    name: 11wire-backend
+    env: node
+    buildCommand: cd backend && npm install
+    startCommand: cd backend && npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000
+      # You'll need to add these as environment variables in Render dashboard
+      # - key: ELEVENLABS_API_KEY
+      #   sync: false
+      # - key: ELEVENLABS_WEBHOOK_SECRET
+      #   sync: false
+    healthCheckPath: /health
