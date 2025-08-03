@@ -10,6 +10,8 @@
     "lint": "eslint ."
   },
   "dependencies": {
+    "@sentry/node": "^10.0.0",
+    "@sentry/profiling-node": "^10.0.0",
     "@signalwire/realtime-api": "^3.13.0",
     "axios": "^1.10.0",
     "cors": "^2.8.5",
@@ -27,6 +29,7 @@
     "signalwire": "^1.0.4",
     "socket.io": "^4.8.1",
     "socket.io-client": "^4.8.1",
+    "uuid": "^11.1.0",
     "wav": "^1.0.2",
     "winston": "^3.8.2",
     "ws": "^8.18.3"

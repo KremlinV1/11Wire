@@ -9,6 +9,7 @@ const http = require('http');
 const cors = require('cors');
 const helmet = require('helmet');
 const morgan = require('morgan');
+const { initSentry } = require('./utils/sentry');
 const config = require('./config');
 const logger = require('./utils/logger');
 const routes = require('./routes');
@@ -17,12 +18,25 @@ const { runSeeders } = require('./utils/seeders');
 const websocketServer = require('./services/websocket-server.service');
 const scheduledJobs = require('./services/scheduled-jobs.service');
 
+// Initialize Sentry first for error tracking
+initSentry();
+
 // Initialize express app
 const app = express();
 
 // Apply middleware
 app.use(helmet()); // Security headers
 app.use(cors(config.corsOptions));
+
+// Request tracking middleware (must be before routes)
+const requestLogger = require('./middleware/request-logger.middleware');
+app.use(requestLogger);
+
+// Performance monitoring middleware
+const { performanceMonitor } = require('./middleware/performance-monitor.middleware');
+app.use(performanceMonitor);
+
+// Standard middleware
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(morgan('combined', { stream: logger.stream }));
@@ -30,6 +44,16 @@ app.use(morgan('combined', { stream: logger.stream }));
 // Health check endpoint
 app.get('/health', (req, res) => {
   res.status(200).json({ status: 'ok', timestamp: new Date().toISOString() });
+});
+
+// Performance metrics endpoint
+const { getMetrics } = require('./middleware/performance-monitor.middleware');
+app.get('/metrics', (req, res) => {
+  // Only allow access from specified IPs or with admin auth in production
+  if (process.env.NODE_ENV === 'production' && !req.headers['x-admin-key']) {
+    return res.status(403).json({ error: 'Unauthorized access to metrics' });
+  }
+  getMetrics(req, res);
 });
 
 // API routes
@@ -46,17 +70,9 @@ app.post('/', (req, res, next) => {
   elevenLabsWebhookController(req, res, next);
 });
 
-// Error handling middleware
-app.use((err, req, res, next) => {
-  logger.error(`${err.status || 500} - ${err.message} - ${req.originalUrl} - ${req.method} - ${req.ip}`);
-  
-  res.status(err.status || 500).json({
-    error: {
-      message: err.message,
-      status: err.status || 500
-    }
-  });
-});
+// Error handling middleware - use our enhanced version with Sentry integration
+const errorHandler = require('./middleware/error-handler.middleware');
+app.use(errorHandler);
 
 // Initialize database and start server
 const PORT = config.port || 3000;
