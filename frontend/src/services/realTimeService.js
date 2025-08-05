@@ -6,7 +6,7 @@
  */
 
 import io from 'socket.io-client';
-import { getToken } from './authService';
+import { getAuthToken } from './authService';
 
 let socket = null;
 
@@ -26,14 +26,14 @@ export const initializeSocket = (options = {}, onConnect, onDisconnect, onError)
   }
 
   // Get API URL from environment or use default
-  const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+  const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001';
   
   // Create new socket connection with authentication token
   socket = io(API_URL, {
-    path: '/socket.io',
+    path: '/stream',
     transports: ['websocket'],
     auth: {
-      token: getToken()
+      token: getAuthToken()
     },
     ...options
   });
